@@ -1,64 +1,71 @@
 #!/usr/bin/env bash
-# run_parallel.sh — Experiment 3 across both GPUs simultaneously.
+# run_parallel.sh — Run both pipeline experiments simultaneously across 2 GPUs.
 #
-# GPU 0: cascaded pipeline (Whisper → Qwen3), vanilla + domain conditions
-# GPU 1: SeamlessM4T v2 end-to-end
+# GPU 0: System A — Whisper large-v3 + NLLB-3.3B (cascaded)
+# GPU 1: System B — SeamlessM4T v2 (end-to-end)
 #
-# Run AFTER: data is prepared and models are downloaded (run.sh steps 1-5).
+# Prerequisites: run steps 1-5 of run.sh first (venv, deps, data, models).
 set -euo pipefail
 
 VENV_DIR=".venv"
 source "$VENV_DIR/bin/activate"
+export PYTHONPATH="${PYTHONPATH:-.}"
 
 DATA_PROCESSED="data/epic_processed"
-GLOSSARY_ES_EN="glossaries/eu_parliament_es_en.json"
+GLOSSARY="glossaries/eu_parliament_es_en.json"
 TS=$(date +%Y%m%d_%H%M%S)
 
-echo "[parallel] Starting Exp 3 on 2 GPUs  (TS=${TS})"
+# Sanity check data exists
+if [ ! -d "$DATA_PROCESSED/audio" ]; then
+    echo "[ERROR] $DATA_PROCESSED/audio not found — run prepare_epic.py first."
+    exit 1
+fi
 
-# ── GPU 0: cascaded conditions (sequential within GPU) ───────────────────────
+echo "[parallel] TS=${TS}"
+echo "[parallel] GPU 0 → cascaded (Whisper + NLLB-3.3B)"
+echo "[parallel] GPU 1 → seamless (SeamlessM4T v2)"
+echo ""
+
+# ── GPU 0: cascaded pipeline ─────────────────────────────────────────────────
 (
-    echo "[GPU 0] cascaded vanilla ..."
     CUDA_VISIBLE_DEVICES=0 python experiments/run_pipeline.py \
         --audio-dir     "$DATA_PROCESSED/audio" \
         --reference-dir "$DATA_PROCESSED/transcripts_en_interp" \
         --source-dir    "$DATA_PROCESSED/transcripts_es" \
-        --backend cascaded --condition vanilla \
-        --output-dir "results/pipeline_cascaded_vanilla_${TS}" \
-        --log-dir logs
-
-    echo "[GPU 0] cascaded domain ..."
-    CUDA_VISIBLE_DEVICES=0 python experiments/run_pipeline.py \
-        --audio-dir     "$DATA_PROCESSED/audio" \
-        --reference-dir "$DATA_PROCESSED/transcripts_en_interp" \
-        --source-dir    "$DATA_PROCESSED/transcripts_es" \
-        --backend cascaded --condition domain \
-        --glossary "$GLOSSARY_ES_EN" \
-        --output-dir "results/pipeline_cascaded_domain_${TS}" \
+        --glossary      "$GLOSSARY" \
+        --backend cascaded \
+        --output-dir "results/pipeline_cascaded_${TS}" \
         --log-dir logs
 ) &
 PID_A=$!
 
-# ── GPU 1: SeamlessM4T end-to-end ────────────────────────────────────────────
+# ── GPU 1: SeamlessM4T v2 end-to-end ─────────────────────────────────────────
 (
-    echo "[GPU 1] seamless e2e ..."
     CUDA_VISIBLE_DEVICES=1 python experiments/run_pipeline.py \
         --audio-dir     "$DATA_PROCESSED/audio" \
         --reference-dir "$DATA_PROCESSED/transcripts_en_interp" \
         --source-dir    "$DATA_PROCESSED/transcripts_es" \
+        --glossary      "$GLOSSARY" \
         --backend seamless \
         --output-dir "results/pipeline_seamless_${TS}" \
         --log-dir logs
 ) &
 PID_B=$!
 
-echo "[parallel] GPU 0 (cascaded) PID=$PID_A  |  GPU 1 (seamless) PID=$PID_B"
-echo "[parallel] Tail logs in real time with:"
-echo "           tail -f logs/pipeline_cascaded_*.log"
-echo "           tail -f logs/pipeline_seamless_e2e_*.log"
+echo "[parallel] Running... PIDs: GPU0=$PID_A  GPU1=$PID_B"
+echo "[parallel] Follow progress (run in separate terminals):"
+echo "           tail -f \$(ls -t logs/pipeline_cascaded_*.log | head -1)"
+echo "           tail -f \$(ls -t logs/pipeline_seamless_*.log | head -1)"
+echo ""
 
-wait $PID_A && echo "[GPU 0] done." || echo "[GPU 0] FAILED — check logs."
-wait $PID_B && echo "[GPU 1] done." || echo "[GPU 1] FAILED — check logs."
+# Wait for both, report outcome independently
+GPU0_OK=true
+GPU1_OK=true
+wait $PID_A || GPU0_OK=false
+wait $PID_B || GPU1_OK=false
 
-echo "[parallel] Exp 3 complete. Results:"
-ls -d results/pipeline_*_${TS}/
+echo ""
+$GPU0_OK && echo "[GPU 0] cascaded  ✓  results/pipeline_cascaded_${TS}/" \
+          || echo "[GPU 0] cascaded  FAILED — check logs/pipeline_cascaded_*.log"
+$GPU1_OK && echo "[GPU 1] seamless  ✓  results/pipeline_seamless_${TS}/" \
+          || echo "[GPU 1] seamless  FAILED — check logs/pipeline_seamless_*.log"

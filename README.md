@@ -55,16 +55,14 @@ Full corpus details: [docs/dataset.md](docs/dataset.md)
 
 ---
 
-## Models
+## Systems
 
-| Role | Model | VRAM |
-|------|-------|------|
-| ASR | `faster-whisper large-v3` (int8) | ~3 GB |
-| End-to-end ST | `facebook/seamless-m4t-v2-large` (fp16) | ~8 GB |
-| Translation | `Qwen/Qwen3-8B` (BitsAndBytes 4-bit) | ~6 GB |
-| Baseline MT | `facebook/nllb-200-3.3B` (fp16) | ~7 GB |
-| Evaluation | `Unbabel/wmt22-comet-da` | ~2 GB |
-| **Total** | | **~26 GB** (fits on a single 48 GB GPU) |
+| System | Components | VRAM |
+|--------|-----------|------|
+| **A — Cascaded** | `faster-whisper large-v3` + `facebook/nllb-200-3.3B` | ~10 GB |
+| **B — End-to-end** | `facebook/seamless-m4t-v2-large` | ~8 GB |
+| Eval | `Unbabel/wmt22-comet-da` + `wmt22-cometkiwi-da` | ~4 GB |
+| **Peak** | | **~22 GB** (one RTX 6000 Ada, 48 GB) |
 
 ---
 
@@ -72,10 +70,13 @@ Full corpus details: [docs/dataset.md](docs/dataset.md)
 
 | # | Script | What it measures |
 |---|--------|-----------------|
-| 1 | `experiments/run_asr.py` | ASR — Whisper vanilla vs domain-prompt vs SeamlessM4T (WER, CER) |
-| 2 | `experiments/run_translation.py` | MT — NLLB-3.3B / Qwen3 vanilla / Qwen3 + glossary (BLEU, COMET, TermAcc) |
-| 3 | `experiments/run_pipeline.py` | Cascaded (Whisper+Qwen3) vs end-to-end (SeamlessM4T) + domain adaptation |
-| 4 | `experiments/compare_glossaries.py` | Glossary construction: manual vs TF-IDF vs LLM-generated |
+| 1 | `run_asr.py` | Whisper ASR quality vs gold ES transcript (WER, CER) |
+| 2 | `run_pipeline.py --backend cascaded` | System A: Whisper + NLLB-3.3B (COMET-DA, COMET-Kiwi, TermAcc, BLEU) |
+| 3 | `run_pipeline.py --backend seamless` | System B: SeamlessM4T v2 end-to-end (same metrics) |
+
+Run experiments 2 & 3 in parallel across both GPUs: `bash run_parallel.sh`
+
+Evaluation protocol: [docs/evaluation.md](docs/evaluation.md)
 
 Architecture details: [docs/architecture.md](docs/architecture.md)
 

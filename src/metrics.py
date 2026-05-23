@@ -1,21 +1,29 @@
-"""WER, CER, BLEU, chrF, COMET, term accuracy."""
+"""Evaluation metrics: WER, CER, BLEU, chrF, COMET, COMET-Kiwi, TermAcc, composite score."""
 from __future__ import annotations
-
 import re
 
 import sacrebleu
 from jiwer import wer, cer
 from comet import download_model, load_from_checkpoint
 
-_comet_model = None
+_comet_da = None
+_comet_kiwi = None
 
 
-def _get_comet():
-    global _comet_model
-    if _comet_model is None:
+def _get_comet_da():
+    global _comet_da
+    if _comet_da is None:
         path = download_model("Unbabel/wmt22-comet-da")
-        _comet_model = load_from_checkpoint(path)
-    return _comet_model
+        _comet_da = load_from_checkpoint(path)
+    return _comet_da
+
+
+def _get_comet_kiwi():
+    global _comet_kiwi
+    if _comet_kiwi is None:
+        path = download_model("Unbabel/wmt22-cometkiwi-da")
+        _comet_kiwi = load_from_checkpoint(path)
+    return _comet_kiwi
 
 
 def compute_wer(reference: str, hypothesis: str) -> float:
@@ -27,26 +35,30 @@ def compute_cer(reference: str, hypothesis: str) -> float:
 
 
 def compute_bleu(hypotheses: list[str], references: list[str]) -> float:
-    result = sacrebleu.corpus_bleu(hypotheses, [references])
-    return result.score
+    return sacrebleu.corpus_bleu(hypotheses, [references]).score
 
 
 def compute_chrf(hypotheses: list[str], references: list[str]) -> float:
-    result = sacrebleu.corpus_chrf(hypotheses, [references])
-    return result.score
+    return sacrebleu.corpus_chrf(hypotheses, [references]).score
 
 
 def compute_comet(sources: list[str], hypotheses: list[str],
                   references: list[str]) -> float:
-    model = _get_comet()
+    """Interpreter alignment — COMET-DA against interpreter reference (semantic)."""
+    model = _get_comet_da()
     data = [{"src": s, "mt": h, "ref": r}
             for s, h, r in zip(sources, hypotheses, references)]
-    scores = model.predict(data, batch_size=8, gpus=1)
-    return float(scores.system_score)
+    return float(model.predict(data, batch_size=8, gpus=1).system_score)
 
 
-def compute_term_accuracy(hypotheses: list[str],
-                          glossary: dict[str, str]) -> float:
+def compute_comet_kiwi(sources: list[str], hypotheses: list[str]) -> float:
+    """Faithfulness score — COMET-Kiwi QE against source (no reference needed)."""
+    model = _get_comet_kiwi()
+    data = [{"src": s, "mt": h} for s, h in zip(sources, hypotheses)]
+    return float(model.predict(data, batch_size=8, gpus=1).system_score)
+
+
+def compute_term_accuracy(hypotheses: list[str], glossary: dict[str, str]) -> float:
     if not glossary:
         return 0.0
     hits = total = 0
@@ -57,3 +69,21 @@ def compute_term_accuracy(hypotheses: list[str],
             if re.search(r"\b" + re.escape(tgt.lower()) + r"\b", hyp_lower):
                 hits += 1
     return hits / total if total else 0.0
+
+
+def compute_composite(
+    comet_da: float,
+    comet_kiwi: float,
+    term_accuracy: float,
+    bleu: float,
+    w_comet_da: float = 0.35,
+    w_comet_kiwi: float = 0.30,
+    w_term: float = 0.20,
+    w_bleu: float = 0.15,
+) -> float:
+    """Composite score (0–1 scale). Weights documented in docs/evaluation.md."""
+    bleu_norm = bleu / 100.0
+    return (w_comet_da   * comet_da
+          + w_comet_kiwi * comet_kiwi
+          + w_term       * term_accuracy
+          + w_bleu       * bleu_norm)

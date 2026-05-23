@@ -11,9 +11,9 @@ os.environ["HF_HOME"] = str(HF_HOME)
 MODELS = {
     "faster-whisper-large-v3":   "Systran/faster-whisper-large-v3",
     "seamless-m4t-v2-large":     "facebook/seamless-m4t-v2-large",
-    "qwen3-8b":                  "Qwen/Qwen3-8B",
     "nllb-200-3.3b":             "facebook/nllb-200-3.3B",
     "wmt22-comet-da":            "Unbabel/wmt22-comet-da",
+    "wmt22-cometkiwi-da":        "Unbabel/wmt22-cometkiwi-da",
 }
 
 IGNORE = ["*.gguf", "flax_model*", "tf_model*", "rust_model*"]

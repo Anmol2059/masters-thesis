@@ -1,0 +1,12 @@
+{
+  "backend": "cascaded",
+  "asr_model": "faster-whisper-large-v3",
+  "mt_model": "facebook/nllb-200-3.3B",
+  "n_files": 127,
+  "bleu": 1.4792300914076133,
+  "chrf": 18.50134332302494,
+  "comet_da": 0.5666465184350652,
+  "comet_kiwi": 0.5206679028319562,
+  "term_acc": 0.02047244094488189,
+  "composite": 0.36083998562794745
+}

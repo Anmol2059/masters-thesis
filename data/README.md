@@ -1,19 +1,15 @@
-# Data
+# data/
 
-Place evaluation datasets here. Structure expected by benchmarks:
+All data directories are gitignored. Run the downloader to populate them.
 
-```
-data/
-└── fisher_callhome_es/
-    ├── audio_001.wav
-    ├── audio_001.txt   ← reference transcript
-    └── ...
-```
-
-Fisher/Callhome Spanish corpus requires LDC license:  
-https://catalog.ldc.upenn.edu/LDC96S35
-
-After downloading, run:
 ```bash
-python scripts/prepare_fisher.py --data-dir /path/to/ldc/corpus
+python data/download_epic.py --data-dir data/epic_raw
+python scripts/prepare_epic.py --epic-dir data/epic_raw --output-dir data/epic_processed
 ```
+
+| Directory | Contents | Size |
+|-----------|----------|------|
+| `epic_raw/` | Downloaded EPIC v2.0 zips + extracted audio + raw transcripts | ~10 GB |
+| `epic_processed/` | Cleaned transcripts paired with audio, ready for experiments | ~1 GB |
+
+See [../docs/dataset.md](../docs/dataset.md) for full corpus documentation.

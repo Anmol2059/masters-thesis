@@ -23,7 +23,7 @@ models/
 # Data (datasets and results — large files, not tracked)
 data/*
 !data/README.md
-!data/download_epic.py   # downloader script is tracked
+!data/download_epic.py
 results/
 *.wav
 *.mp3
@@ -31,6 +31,13 @@ results/
 *.m4a
 *.zip
 *.csv
+
+# Generated glossaries (built by scripts, not hand-crafted)
+glossaries/eu_parliament_es_en_tfidf.json
+glossaries/eu_parliament_es_en_llm.json
+
+# Logs
+logs/
 
 # Notebooks
 .ipynb_checkpoints/

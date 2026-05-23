@@ -39,8 +39,8 @@ FILES = {
     },
 }
 
-# EPIC v2.0 source language codes used in filenames
-ES_PATTERNS = ["_ES_", "/ES/", "ES-EN", "es_en"]
+# EPIC v2.0 naming: source speeches are epic_st_*-org-{lang}.mp4 under source/
+# We want Spanish originals: org-es.mp4
 
 CHUNK = 1 << 20  # 1 MB chunks
 
@@ -98,9 +98,8 @@ def unzip_if_needed(zip_path: Path, extract_to: Path) -> None:
 
 
 def is_es_source(path: Path) -> bool:
-    name = path.name.upper()
-    parent = str(path.parent).upper()
-    return any(pat.upper() in name or pat.upper() in parent for pat in ES_PATTERNS)
+    # EPIC source files: epic_st_*-org-es.mp4 inside source/
+    return path.name.endswith("-org-es.mp4")
 
 
 def extract_audio(video: Path, out_wav: Path) -> None:
@@ -113,9 +112,10 @@ def extract_audio(video: Path, out_wav: Path) -> None:
 
 
 def extract_all_audio(recordings_dir: Path, audio_out: Path) -> None:
-    video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
-    videos = [p for p in recordings_dir.rglob("*")
-              if p.suffix.lower() in video_exts and is_es_source(p)]
+    # ES source videos live under source/ subdirectory
+    source_dir = recordings_dir / "06_recordings_v2.0" / "source"
+    search_root = source_dir if source_dir.exists() else recordings_dir
+    videos = [p for p in search_root.rglob("*.mp4") if is_es_source(p)]
 
     if not videos:
         log(f"WARNING: no ES video files found under {recordings_dir}")

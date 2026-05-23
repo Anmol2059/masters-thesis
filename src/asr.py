@@ -37,7 +37,7 @@ class SeamlessTranscriber:
         self.device = device
         self.processor = AutoProcessor.from_pretrained(self.MODEL_ID)
         self.model = SeamlessM4Tv2Model.from_pretrained(
-            self.MODEL_ID, torch_dtype=torch.float16
+            self.MODEL_ID, dtype=torch.float16
         ).to(device)
 
     def _load_audio(self, audio_path: str):
@@ -50,7 +50,7 @@ class SeamlessTranscriber:
         """ES audio → ES text (ASR only, for WER evaluation)."""
         waveform, sr = self._load_audio(audio_path)
         inputs = self.processor(
-            audios=waveform, sampling_rate=sr, return_tensors="pt"
+            audio=waveform, sampling_rate=sr, return_tensors="pt"
         ).to(self.device)
         output_tokens = self.model.generate(**inputs, tgt_lang="spa", generate_speech=False)
         return self.processor.decode(output_tokens[0].tolist()[0], skip_special_tokens=True)
@@ -59,7 +59,7 @@ class SeamlessTranscriber:
         """ES audio → EN text (end-to-end speech translation)."""
         waveform, sr = self._load_audio(audio_path)
         inputs = self.processor(
-            audios=waveform, sampling_rate=sr, return_tensors="pt"
+            audio=waveform, sampling_rate=sr, return_tensors="pt"
         ).to(self.device)
         output_tokens = self.model.generate(**inputs, tgt_lang="eng", generate_speech=False)
         return self.processor.decode(output_tokens[0].tolist()[0], skip_special_tokens=True)

@@ -41,8 +41,9 @@ class SeamlessTranscriber:
         ).to(device)
 
     def _load_audio(self, audio_path: str):
-        import torchaudio
-        waveform, sample_rate = torchaudio.load(audio_path)
+        import librosa
+        # librosa has no CUDA dependency — safer than torchaudio on this system
+        waveform, sample_rate = librosa.load(audio_path, sr=16000, mono=True)
         return waveform, sample_rate
 
     def transcribe(self, audio_path: str) -> str:

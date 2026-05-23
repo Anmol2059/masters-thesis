@@ -17,9 +17,6 @@ bitsandbytes>=0.43.0
 sentencepiece
 protobuf
 
-# Audio (SeamlessM4T v2 input processing)
-torchaudio
-
 # Evaluation
 unbabel-comet>=2.2.0
 sacrebleu>=2.3.0

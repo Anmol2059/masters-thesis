@@ -1,9 +1,0 @@
-_base: default.yaml
-
-translator:
-  domain: economics
-
-glossary: glossaries/economics_es_en.json
-
-source_asr:
-  initial_prompt: "PIB, IBEX 35, BCE, inflación subyacente, tipo de interés, prima de riesgo"

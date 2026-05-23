@@ -1,9 +1,0 @@
-_base: default.yaml
-
-translator:
-  domain: legal
-
-glossary: glossaries/legal_es_en.json
-
-source_asr:
-  initial_prompt: "jurisprudencia, nulidad, recurso de amparo, demandante, demandado, auto judicial"

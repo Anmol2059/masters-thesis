@@ -1,25 +1,25 @@
-source_asr:
+asr:
   model_size: large-v3
   language: es
   compute_type: int8
-
-interp_asr:
-  model_size: large-v3-turbo
-  language: en
-  compute_type: int8
+  device: cuda
 
 translator:
-  model_id: Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
-  domain: general
+  qwen_model_id: Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
+  nllb_model_id: facebook/nllb-200-distilled-600M
 
-judge:
-  model_id: Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
+evaluation:
+  comet_model: Unbabel/wmt22-comet-da
+  sacrebleu_tokenize: 13a
 
-baseline_mt:
-  model_id: facebook/nllb-200-distilled-600M
+glossaries:
+  manual_es: glossaries/eu_parliament_es.json
+  manual_es_en: glossaries/eu_parliament_es_en.json
+  tfidf_es_en: glossaries/eu_parliament_es_en_tfidf.json
+  llm_es_en: glossaries/eu_parliament_es_en_llm.json
 
-ui:
-  port: 7860
-  share: false
+data:
+  epic_raw: data/epic_raw
+  epic_processed: data/epic_processed
 
 models_dir: models/hf_cache

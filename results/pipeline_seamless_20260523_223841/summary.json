@@ -1,0 +1,12 @@
+{
+  "backend": "seamless",
+  "asr_model": "facebook/seamless-m4t-v2-large",
+  "mt_model": "n/a",
+  "n_files": 127,
+  "bleu": 5.899068910350511,
+  "chrf": 32.12213765920397,
+  "comet_da": 0.6139029273836631,
+  "comet_kiwi": 0.5029609649200139,
+  "term_acc": 0.030236220472440945,
+  "composite": 0.38065016152030023
+}

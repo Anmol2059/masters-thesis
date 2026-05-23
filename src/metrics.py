@@ -1,10 +1,16 @@
 """Evaluation metrics: WER, CER, BLEU, chrF, COMET, COMET-Kiwi, TermAcc, composite score."""
 from __future__ import annotations
+import os
 import re
 
 import sacrebleu
 from jiwer import wer, cer
 from comet import download_model, load_from_checkpoint
+
+# Ensure HF token is visible even when HF_HOME is overridden to a non-home path
+_hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+if _hf_token:
+    os.environ.setdefault("HUGGING_FACE_HUB_TOKEN", _hf_token)
 
 _comet_da = None
 _comet_kiwi = None

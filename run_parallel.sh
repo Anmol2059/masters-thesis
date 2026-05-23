@@ -11,9 +11,11 @@ VENV_DIR=".venv"
 source "$VENV_DIR/bin/activate"
 export PYTHONPATH="${PYTHONPATH:-.}"
 export HF_HOME="${HF_HOME:-/mnt/thau08a/aguragain/hf_cache}"
-# Bypass NVML-based memory management (NVML driver mismatch on this system)
-# cudaMallocAsync bypasses NVML entirely (driver/lib mismatch on this system)
 export PYTORCH_CUDA_ALLOC_CONF=backend:cudaMallocAsync
+if [ -z "${HF_TOKEN:-}" ] && [ -f "/mnt/thau08a/aguragain/.env" ]; then
+    export HF_TOKEN=$(grep ^HF_TOKEN /mnt/thau08a/aguragain/.env | cut -d= -f2)
+fi
+export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN:-}"
 
 DATA_PROCESSED="data/epic_processed"
 GLOSSARY="glossaries/eu_parliament_es_en.json"

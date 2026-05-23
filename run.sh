@@ -21,6 +21,11 @@ export PYTHONPATH="${PYTHONPATH:-.}"
 # Use local disk for HF cache — NFS (/autofs/thau00a) is too slow for large models
 export HF_HOME="${HF_HOME:-/mnt/thau08a/aguragain/hf_cache}"
 export PYTORCH_CUDA_ALLOC_CONF=backend:cudaMallocAsync
+# HF token — needed for gated models (wmt22-cometkiwi-da); read from ~/.env if not already set
+if [ -z "${HF_TOKEN:-}" ] && [ -f "/mnt/thau08a/aguragain/.env" ]; then
+    export HF_TOKEN=$(grep ^HF_TOKEN /mnt/thau08a/aguragain/.env | cut -d= -f2)
+fi
+export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN:-}"
 echo "[run.sh] Python: $(which python)  TS=${TS}"
 
 # ── 2. PyTorch (auto-detect CUDA version) ───────────────────────────────────

@@ -55,7 +55,7 @@ def main():
         # giving it an inherent domain advantage — documented in discussion.
     else:
         transcriber = Transcriber(model_size=args.asr_model)
-        translator = Translator(model="nllb")
+        translator = Translator()
         asr_model_id = f"faster-whisper-{args.asr_model}"
 
     audio_files = sorted(Path(args.audio_dir).glob("*.wav"))

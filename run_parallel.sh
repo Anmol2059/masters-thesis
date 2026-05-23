@@ -10,6 +10,7 @@ set -euo pipefail
 VENV_DIR=".venv"
 source "$VENV_DIR/bin/activate"
 export PYTHONPATH="${PYTHONPATH:-.}"
+export HF_HOME="${HF_HOME:-/mnt/thau08a/aguragain/hf_cache}"
 
 DATA_PROCESSED="data/epic_processed"
 GLOSSARY="glossaries/eu_parliament_es_en.json"

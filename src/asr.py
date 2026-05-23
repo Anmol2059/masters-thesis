@@ -55,11 +55,25 @@ class SeamlessTranscriber:
         output_tokens = self.model.generate(**inputs, tgt_lang="spa", generate_speech=False)
         return self.processor.decode(output_tokens[0].tolist()[0], skip_special_tokens=True)
 
-    def translate(self, audio_path: str) -> str:
-        """ES audio → EN text (end-to-end speech translation)."""
-        waveform, sr = self._load_audio(audio_path)
-        inputs = self.processor(
-            audio=waveform, sampling_rate=sr, return_tensors="pt"
-        ).to(self.device)
-        output_tokens = self.model.generate(**inputs, tgt_lang="eng", generate_speech=False)
-        return self.processor.decode(output_tokens[0].tolist()[0], skip_special_tokens=True)
+    def translate(self, audio_path: str, chunk_sec: int = 28) -> str:
+        """ES audio → EN text. Chunks long audio to avoid OOM (SeamlessM4T max ~30s)."""
+        import numpy as np
+        waveform, sr = self._load_audio(audio_path)  # sr=16000, mono, numpy array
+        chunk_samples = chunk_sec * sr
+        min_samples = sr // 2  # 0.5s — spectrogram minimum
+        raw_chunks = [waveform[i:i + chunk_samples]
+                      for i in range(0, len(waveform), chunk_samples)]
+        # Pad last chunk with silence rather than skipping — no data loss
+        chunks = []
+        for c in raw_chunks:
+            if len(c) < min_samples:
+                c = np.pad(c, (0, min_samples - len(c)))
+            chunks.append(c)
+        parts = []
+        for chunk in chunks:
+            inputs = self.processor(
+                audio=chunk, sampling_rate=sr, return_tensors="pt"
+            ).to(self.device)
+            output_tokens = self.model.generate(**inputs, tgt_lang="eng", generate_speech=False)
+            parts.append(self.processor.decode(output_tokens[0].tolist()[0], skip_special_tokens=True))
+        return " ".join(parts)

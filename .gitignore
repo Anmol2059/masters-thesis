@@ -23,11 +23,13 @@ models/
 # Data (datasets and results — large files, not tracked)
 data/*
 !data/README.md
+!data/download_epic.py   # downloader script is tracked
 results/
 *.wav
 *.mp3
 *.flac
 *.m4a
+*.zip
 *.csv
 
 # Notebooks

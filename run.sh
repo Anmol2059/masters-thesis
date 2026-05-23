@@ -20,7 +20,7 @@ source "$VENV_DIR/bin/activate"
 export PYTHONPATH="${PYTHONPATH:-.}"
 # Use local disk for HF cache — NFS (/autofs/thau00a) is too slow for large models
 export HF_HOME="${HF_HOME:-/mnt/thau08a/aguragain/hf_cache}"
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export PYTORCH_CUDA_ALLOC_CONF=backend:cudaMallocAsync
 echo "[run.sh] Python: $(which python)  TS=${TS}"
 
 # ── 2. PyTorch (auto-detect CUDA version) ───────────────────────────────────

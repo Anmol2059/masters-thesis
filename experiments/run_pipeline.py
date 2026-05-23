@@ -81,12 +81,22 @@ def main():
             skipped += 1
             continue
 
-        if args.backend == "seamless":
-            hypothesis_en = transcriber.translate(str(audio_file))
-            asr_es = ""
-        else:
-            asr_es = transcriber.transcribe(str(audio_file))
-            hypothesis_en = translator.translate(asr_es)
+        for attempt in range(3):
+            try:
+                if args.backend == "seamless":
+                    hypothesis_en = transcriber.translate(str(audio_file))
+                    asr_es = ""
+                else:
+                    asr_es = transcriber.transcribe(str(audio_file))
+                    hypothesis_en = translator.translate(asr_es)
+                break
+            except RuntimeError as e:
+                tqdm.write(f"  [retry {attempt+1}/3] {stem}: {e}")
+                if attempt == 2:
+                    tqdm.write(f"  [skip] {stem} failed after 3 attempts")
+                    logger.error("skip %s after 3 attempts: %s", stem, e)
+                    hypothesis_en = ""
+                    asr_es = ""
 
         reference_en = ref_file.read_text().strip()
         source_es = ""

@@ -1,0 +1,49 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PyTorch — install separately based on your environment BEFORE pip install -r
+#   CUDA 12.1:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#   CUDA 11.8:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#   CPU only:   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+#   macOS MPS:  pip install torch torchvision torchaudio
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ASR
+faster-whisper
+silero-vad
+
+# LLM / Translation
+transformers
+accelerate
+bitsandbytes          # 4-bit / 8-bit quantisation (CUDA)
+auto-gptq             # GPTQ quantised model support
+optimum               # HuggingFace optimum backend
+sentencepiece         # tokeniser for NLLB, Qwen
+protobuf
+
+# Evaluation
+unbabel-comet
+sacrebleu
+evaluate              # HuggingFace evaluate library
+
+# Audio I/O
+sounddevice
+pyaudio
+librosa
+scipy
+numpy
+
+# HuggingFace hub
+huggingface_hub
+
+# Configuration & utilities
+pyyaml
+python-dotenv
+tqdm
+loguru
+rich
+
+# UI
+gradio
+
+# Testing (dev)
+pytest
+pytest-asyncio

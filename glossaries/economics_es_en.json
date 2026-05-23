@@ -1,0 +1,19 @@
+{
+  "PIB": {"translation": "GDP", "note": "Gross Domestic Product — do not translate acronym"},
+  "BCE": {"translation": "ECB", "note": "European Central Bank"},
+  "IBEX 35": {"translation": "IBEX 35", "note": "Spanish stock index — do not translate"},
+  "tipo de interés": {"translation": "interest rate", "note": "NOT: type of interest"},
+  "prima de riesgo": {"translation": "risk premium"},
+  "inflación subyacente": {"translation": "core inflation"},
+  "deuda soberana": {"translation": "sovereign debt"},
+  "balanza de pagos": {"translation": "balance of payments"},
+  "déficit presupuestario": {"translation": "budget deficit"},
+  "política monetaria": {"translation": "monetary policy"},
+  "tipo de cambio": {"translation": "exchange rate"},
+  "mercado interbancario": {"translation": "interbank market"},
+  "renta variable": {"translation": "equities / variable income"},
+  "renta fija": {"translation": "fixed income / bonds"},
+  "fondo de inversión": {"translation": "investment fund"},
+  "rescate financiero": {"translation": "financial bailout"},
+  "ajuste estructural": {"translation": "structural adjustment"}
+}

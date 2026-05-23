@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Models (large binaries — download via scripts/download_models.py)
+models/
+
+# Data (datasets and results — large files, not tracked)
+data/*
+!data/README.md
+results/
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.csv
+
+# Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment
+.env
+.env.*
+*.pem
+*.key
+
+# HuggingFace cache
+~/.cache/huggingface/
+
+# Logs
+*.log
+logs/
+
+# Paper build artifacts
+paper/*.aux
+paper/*.log
+paper/*.pdf
+paper/*.bbl
+paper/*.blg
+paper/_minted*/

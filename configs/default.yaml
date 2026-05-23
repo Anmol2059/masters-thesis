@@ -1,0 +1,25 @@
+source_asr:
+  model_size: large-v3
+  language: es
+  compute_type: int8
+
+interp_asr:
+  model_size: large-v3-turbo
+  language: en
+  compute_type: int8
+
+translator:
+  model_id: Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
+  domain: general
+
+judge:
+  model_id: Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
+
+baseline_mt:
+  model_id: facebook/nllb-200-distilled-600M
+
+ui:
+  port: 7860
+  share: false
+
+models_dir: models/hf_cache

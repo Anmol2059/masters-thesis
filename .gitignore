@@ -20,11 +20,10 @@ ENV/
 # Models (large binaries — download via scripts/download_models.py)
 models/
 
-# Data (datasets and results — large files, not tracked)
+# Data (large files, not tracked)
 data/*
 !data/README.md
 !data/download_epic.py
-results/
 *.wav
 *.mp3
 *.flac
@@ -36,7 +35,10 @@ results/
 glossaries/eu_parliament_es_en_tfidf.json
 glossaries/eu_parliament_es_en_llm.json
 
-# Logs
+# Session notes (local only)
+claude-remember.md
+
+# Logs (local only — results/ is tracked)
 logs/
 
 # Notebooks

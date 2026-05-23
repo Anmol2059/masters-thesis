@@ -1,21 +1,24 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# PyTorch — install separately based on your environment BEFORE pip install -r
-#   CUDA 12.1:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-#   CUDA 11.8:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-#   CPU only:   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# PyTorch — install separately BEFORE pip install -r (match your CUDA version)
+#   CUDA 12.6/12.8:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+#   CUDA 12.1:       pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#   CUDA 11.8:       pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#   CPU only:        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# This machine: CUDA 12.8 → use cu126
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ASR
 faster-whisper>=1.0.0
 
 # LLM / Translation
-transformers>=4.40.0
+transformers>=4.51.0
 accelerate
-bitsandbytes
-auto-gptq>=0.7.0
-optimum
+bitsandbytes>=0.43.0
 sentencepiece
 protobuf
+
+# Audio (SeamlessM4T v2 input processing)
+torchaudio
 
 # Evaluation
 unbabel-comet>=2.2.0

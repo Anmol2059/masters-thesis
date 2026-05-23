@@ -1,1 +1,1 @@
-"""InterpretBench — real-time interpreter quality assessment."""
+"""Domain-adapted speech translation thesis pipeline."""

@@ -11,22 +11,23 @@ Core question: **how much does a domain glossary improve ASR and translation qua
 
 ```
 EPIC v2.0: 130 Spanish EU Parliament speeches (~6.3 h, avg 2.9 min each)
-                         │
-                         ▼
-              ┌──────────────────┐
-              │ Whisper large-v3 │  vanilla  vs.  + EU Parliament domain prompt
-              │  Spanish audio   │
-              │  → Spanish text  │
-              └────────┬─────────┘
-                       │
-         ┌─────────────┼──────────────────┐
-         ▼                                ▼
-  ┌─────────────┐               ┌──────────────────┐
-  │ ASR eval vs │               │  Translate ES→EN │  NLLB-600M baseline
-  │ gold ES     │               │                  │  Qwen2.5-7B vanilla
-  │ transcript  │               │                  │  Qwen2.5-7B + glossary
-  │ WER / CER   │               └────────┬─────────┘
-  └─────────────┘                        │
+                         │  audio (WAV, 16kHz mono)
+          ┌──────────────┴──────────────────────────┐
+          ▼  cascaded                               ▼  end-to-end
+┌──────────────────┐                    ┌────────────────────────┐
+│ Whisper large-v3 │ vanilla /          │ SeamlessM4T v2         │
+│  ES audio →      │ + domain prompt    │ ES audio → EN text     │
+│  ES text         │                    └───────────┬────────────┘
+└────────┬─────────┘                               │
+         │                                         │
+   ┌─────┴──────┐  ┌─────────────────────────┐    │
+   ▼            ▼  │  Translate ES→EN         │    │
+┌──────────┐    │  │  NLLB-3.3B  baseline    │    │
+│ ASR eval │    └─►│  Qwen3-8B   vanilla      │    │
+│ WER / CER│       │  Qwen3-8B   + glossary  │    │
+└──────────┘       └────────────┬────────────┘    │
+                                │  English text   │
+                                └────────┬────────┘
                                          ▼
                               ┌──────────────────────┐
                               │ Eval vs gold English │
@@ -59,10 +60,11 @@ Full corpus details: [docs/dataset.md](docs/dataset.md)
 | Role | Model | VRAM |
 |------|-------|------|
 | ASR | `faster-whisper large-v3` (int8) | ~3 GB |
-| Translation | `Qwen2.5-7B-Instruct` (GPTQ 4-bit) | ~5 GB |
-| Baseline MT | `NLLB-200-distilled-600M` | ~2 GB |
+| End-to-end ST | `facebook/seamless-m4t-v2-large` (fp16) | ~8 GB |
+| Translation | `Qwen/Qwen3-8B` (BitsAndBytes 4-bit) | ~6 GB |
+| Baseline MT | `facebook/nllb-200-3.3B` (fp16) | ~7 GB |
 | Evaluation | `Unbabel/wmt22-comet-da` | ~2 GB |
-| **Total** | | **~12 GB** (fits on 24 GB GPU) |
+| **Total** | | **~26 GB** (fits on a single 48 GB GPU) |
 
 ---
 
@@ -70,9 +72,9 @@ Full corpus details: [docs/dataset.md](docs/dataset.md)
 
 | # | Script | What it measures |
 |---|--------|-----------------|
-| 1 | `experiments/run_asr.py` | ASR — vanilla vs domain-prompted Whisper (WER, CER) |
-| 2 | `experiments/run_translation.py` | MT — NLLB / Qwen vanilla / Qwen + glossary (BLEU, COMET, TermAcc) |
-| 3 | `experiments/run_pipeline.py` | Full pipeline audio→EN across all ASR × MT conditions |
+| 1 | `experiments/run_asr.py` | ASR — Whisper vanilla vs domain-prompt vs SeamlessM4T (WER, CER) |
+| 2 | `experiments/run_translation.py` | MT — NLLB-3.3B / Qwen3 vanilla / Qwen3 + glossary (BLEU, COMET, TermAcc) |
+| 3 | `experiments/run_pipeline.py` | Cascaded (Whisper+Qwen3) vs end-to-end (SeamlessM4T) + domain adaptation |
 | 4 | `experiments/compare_glossaries.py` | Glossary construction: manual vs TF-IDF vs LLM-generated |
 
 Architecture details: [docs/architecture.md](docs/architecture.md)

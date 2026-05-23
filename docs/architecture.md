@@ -1,6 +1,6 @@
 # System Architecture
 
-End-to-end offline pipeline: Spanish speech → ASR → Machine Translation → Evaluation against professional interpreter output.
+End-to-end offline pipeline: Spanish speech → ASR / Speech Translation → Evaluation against professional interpreter output.
 
 ---
 
@@ -12,48 +12,51 @@ End-to-end offline pipeline: Spanish speech → ASR → Machine Translation → 
 │  130 Spanish EU Parliament speeches  (~6.3 h total, ~2.9 min avg)   │
 └────────────────────────┬─────────────────────────────────────────────┘
                          │  audio (WAV, 16kHz mono)
-                         ▼
-               ┌──────────────────┐
-               │  Whisper large-v3│  ← vanilla  OR  + domain initial_prompt
-               │  (faster-whisper │
-               │   int8, CUDA)    │
-               └────────┬─────────┘
-                        │  Spanish text (hypothesis)
-         ┌──────────────┼──────────────────────┐
-         ▼                                     ▼
-  ┌─────────────┐                     ┌──────────────────┐
-  │  ASR eval   │                     │   Translation    │
-  │  vs gold ES │                     │   ES → EN        │
-  │  transcript │                     │                  │
-  │             │                     │  A) NLLB-600M    │
-  │  WER  CER   │                     │  B) Qwen2.5-7B   │
-  │  (overall + │                     │     vanilla      │
-  │  domain     │                     │  C) Qwen2.5-7B   │
-  │  terms)     │                     │     + glossary   │
-  └─────────────┘                     └───────┬──────────┘
-                                              │  English text
-                                              ▼
-                                   ┌──────────────────────┐
-                                   │  Evaluation          │
-                                   │  vs gold EN interp   │
-                                   │  transcript          │
-                                   │                      │
-                                   │  BLEU  chrF  COMET   │
-                                   │  Term Accuracy       │
-                                   └──────────────────────┘
+          ┌──────────────┴──────────────────────────┐
+          ▼                                         ▼
+┌──────────────────┐                    ┌────────────────────────┐
+│ Whisper large-v3 │                    │  SeamlessM4T v2        │
+│ (faster-whisper  │                    │  (end-to-end ST)       │
+│  int8, CUDA)     │                    │                        │
+│                  │  vanilla OR        │  ES audio → EN text    │
+│  ES audio →      │  + domain prompt   │  (no adaptation)       │
+│  ES text         │                    └───────────┬────────────┘
+└────────┬─────────┘                               │
+         │  Spanish text (hypothesis)              │  English text
+   ┌─────┴────────────┐                            │
+   ▼                  ▼                            │
+┌──────────┐  ┌──────────────────────────────┐    │
+│ ASR eval │  │   Translation   ES → EN      │    │
+│ vs gold  │  │                              │    │
+│ ES text  │  │  A) NLLB-3.3B  (baseline)   │    │
+│          │  │  B) Qwen3-8B   vanilla       │    │
+│ WER  CER │  │  C) Qwen3-8B   + glossary   │    │
+└──────────┘  └──────────────┬───────────────┘    │
+                             │  English text       │
+                             └──────────┬──────────┘
+                                        ▼
+                             ┌──────────────────────┐
+                             │  Evaluation          │
+                             │  vs gold EN interp   │
+                             │  transcript          │
+                             │                      │
+                             │  BLEU  chrF  COMET   │
+                             │  Term Accuracy       │
+                             └──────────────────────┘
 ```
 
 ---
 
 ## Models
 
-| Role | Model | Size | VRAM | Quantisation |
-|------|-------|------|------|-------------|
-| ASR | `faster-whisper large-v3` | 1.55B | ~3 GB | int8 |
-| Translation (main) | `Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4` | 7B | ~5 GB | GPTQ 4-bit |
-| Translation (baseline) | `facebook/nllb-200-distilled-600M` | 600M | ~2 GB | fp16 |
-| Evaluation | `Unbabel/wmt22-comet-da` | — | ~2 GB | fp16 |
-| **Total peak** | | | **~12 GB** | fits on 24 GB GPU |
+| Role | Model | VRAM | Notes |
+|------|-------|------|-------|
+| ASR | `Systran/faster-whisper-large-v3` (int8) | ~3 GB | Standard open-source ASR baseline |
+| End-to-end ST | `facebook/seamless-m4t-v2-large` (fp16) | ~8 GB | Direct ES audio → EN text, no cascade |
+| MT baseline | `facebook/nllb-200-3.3B` (fp16) | ~7 GB | Dedicated translation model |
+| MT main | `Qwen/Qwen3-8B` (BitsAndBytes 4-bit) | ~6 GB | Instruction-tuned LLM + glossary injection |
+| Evaluation | `Unbabel/wmt22-comet-da` | ~2 GB | Neural MT quality metric |
+| **Total peak** | | **~26 GB** | Fits on a single RTX 6000 Ada (48 GB) |
 
 ---
 
@@ -73,9 +76,11 @@ model.transcribe(audio, language="es",
                    "ponente, enmienda, directiva, codecisión ...")
 ```
 
+SeamlessM4T v2 has no comparable adaptation interface — used as a domain-agnostic end-to-end baseline.
+
 ### Translation — Glossary in System Prompt
 
-Qwen receives a glossary block in its system message constraining how specific terms must be rendered:
+Qwen3 receives a glossary block in its system message constraining how specific terms must be rendered. Chain-of-thought is disabled (`enable_thinking=False`) for inference speed:
 
 ```python
 system = """Translate Spanish to English. Use this glossary strictly:
@@ -87,7 +92,7 @@ system = """Translate Spanish to English. Use this glossary strictly:
 ..."""
 ```
 
-NLLB is a seq2seq model with no prompt interface — used as a glossary-free baseline.
+NLLB-3.3B is a seq2seq model with no prompt interface — used as a glossary-free baseline.
 
 ---
 
@@ -99,7 +104,7 @@ Three methods compared:
 |--------|-----|--------|
 | **Manual** | Expert selects ~25–50 high-stakes EU terms | `glossaries/eu_parliament_es_en.json` |
 | **TF-IDF** | Top-k n-grams by TF-IDF score over EPIC corpus | `glossaries/eu_parliament_es_en_tfidf.json` |
-| **LLM-generated** | Qwen prompted to extract + translate domain terms | `glossaries/eu_parliament_es_en_llm.json` |
+| **LLM-generated** | Qwen3 prompted to extract + translate domain terms | `glossaries/eu_parliament_es_en_llm.json` |
 
 ---
 
@@ -107,10 +112,12 @@ Three methods compared:
 
 | # | Name | Input | What varies | Key metric |
 |---|------|-------|-------------|------------|
-| 1 | ASR adaptation | Audio | vanilla vs domain prompt | WER, CER |
-| 2 | MT adaptation | Gold ES text | model × glossary method | BLEU, COMET, TermAcc |
-| 3 | Full pipeline | Audio | ASR × MT condition | BLEU, COMET |
-| 4 | Glossary methods | Gold ES text | manual vs TF-IDF vs LLM | BLEU, COMET, TermAcc |
+| 1 | ASR adaptation | Audio | Whisper vanilla vs domain prompt vs SeamlessM4T | WER, CER |
+| 2 | MT adaptation | Gold ES text | NLLB-3.3B / Qwen3 vanilla / Qwen3 + glossary | BLEU, COMET, TermAcc |
+| 3 | Full pipeline | Audio | Cascaded (Whisper+Qwen3) vs end-to-end (SeamlessM4T) + domain adaptation | BLEU, COMET |
+| 4 | Glossary methods | Gold ES text | manual vs TF-IDF vs LLM-generated | BLEU, COMET, TermAcc |
+
+The central comparison in Experiment 3 — cascaded domain-adapted vs end-to-end — is the paper's primary research contribution.
 
 ---
 
@@ -118,23 +125,23 @@ Three methods compared:
 
 ```
 src/
-├── asr.py          Whisper wrapper — loads model, applies domain prompt
-├── translator.py   Qwen + NLLB wrappers — glossary injection
+├── asr.py          Transcriber (Whisper) + SeamlessTranscriber (SeamlessM4T v2)
+├── translator.py   Qwen3 + NLLB wrappers with glossary injection
 ├── glossary.py     Load JSON glossary, format for prompt / ASR prompt
 ├── metrics.py      WER, CER, BLEU, chrF, COMET, term accuracy
 └── epic_parser.py  Strip EPIC markup from raw transcripts
 
 experiments/
-├── run_asr.py          Experiment 1
-├── run_translation.py  Experiment 2
-├── run_pipeline.py     Experiment 3
-└── compare_glossaries.py Experiment 4
+├── run_asr.py              Experiment 1 (--backend whisper|seamless)
+├── run_translation.py      Experiment 2
+├── run_pipeline.py         Experiment 3 (--backend cascaded|seamless)
+└── compare_glossaries.py   Experiment 4
 
 scripts/
 ├── prepare_epic.py           Clean transcripts, pair with audio
 ├── download_models.py        Pull models from HuggingFace Hub
 ├── extract_glossary_tfidf.py Auto-glossary via TF-IDF
-└── extract_glossary_llm.py   Auto-glossary via Qwen
+└── extract_glossary_llm.py   Auto-glossary via Qwen3
 
 data/
 └── download_epic.py   Resumable downloader for EPIC v2.0 from Zenodo

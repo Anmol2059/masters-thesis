@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check and download all required models for InterpretBench."""
+"""Download all required models for the thesis pipeline."""
 import os
 import sys
 from pathlib import Path
@@ -8,15 +8,14 @@ HF_HOME = Path(os.environ.get("HF_HOME", "models/hf_cache"))
 HF_HOME.mkdir(parents=True, exist_ok=True)
 os.environ["HF_HOME"] = str(HF_HOME)
 
-# model_name -> HuggingFace repo_id
 MODELS = {
-    "faster-whisper-large-v3":       "Systran/faster-whisper-large-v3",
-    "faster-whisper-large-v3-turbo": "Systran/faster-whisper-large-v3-turbo",
-    "qwen2.5-7b-instruct-gptq-int4": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
-    "nllb-200-distilled-600m":       "facebook/nllb-200-distilled-600M",
+    "faster-whisper-large-v3":   "Systran/faster-whisper-large-v3",
+    "seamless-m4t-v2-large":     "facebook/seamless-m4t-v2-large",
+    "qwen3-8b":                  "Qwen/Qwen3-8B",
+    "nllb-200-3.3b":             "facebook/nllb-200-3.3B",
+    "wmt22-comet-da":            "Unbabel/wmt22-comet-da",
 }
 
-# Patterns to skip (save disk space)
 IGNORE = ["*.gguf", "flax_model*", "tf_model*", "rust_model*"]
 
 
@@ -32,11 +31,7 @@ def is_cached(repo_id: str) -> bool:
 def download(name: str, repo_id: str) -> None:
     from huggingface_hub import snapshot_download
     print(f"  Downloading {name}  ({repo_id}) ...")
-    snapshot_download(
-        repo_id=repo_id,
-        cache_dir=HF_HOME,
-        ignore_patterns=IGNORE,
-    )
+    snapshot_download(repo_id=repo_id, cache_dir=HF_HOME, ignore_patterns=IGNORE)
     print(f"  ✓ {name}")
 
 
